@@ -1,0 +1,604 @@
+package br.com.fiap.entity;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.IdClass;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="TB_DEPENDENTE")
+@IdClass(DependentePK.class)
+public class Dependente {
+
+	@Id
+	@Column(name="CD_DEPENDENTE")
+	@SequenceGenerator(name="sqDependente", sequenceName="SQ_DEPENDENTE", allocationSize=1)
+	@GeneratedValue(strategy=GenerationType.SEQUENCE,generator="sqDependente")
+	private int codigo;
+	
+	@Id
+	@ManyToOne(cascade=CascadeType.PERSIST)
+	@JoinColumn(name="CD_FUNCIONARIO")
+	private Funcionario funcionario;
+	
+	@Column(name="NM_DEPENDENTE")
+	private String nome;
+
+	public Dependente() {
+		super();
+	}
+
+	public Dependente(int codigo, Funcionario funcionario, String nome) {
+		super();
+		this.codigo = codigo;
+		this.funcionario = funcionario;
+		this.nome = nome;
+	}
+
+	public int getCodigo() {
+		return codigo;
+	}
+
+	public void setCodigo(int codigo) {
+		this.codigo = codigo;
+	}
+
+	public Funcionario getFuncionario() {
+		return funcionario;
+	}
+
+	public void setFuncionario(Funcionario funcionario) {
+		this.funcionario = funcionario;
+	}
+
+	public String getNome() {
+		return nome;
+	}
+
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+	
+}
+ 
+ /*--------------------------------------------------------------------*/
+ 
+ package br.com.fiap.entity;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.SecondaryTable;
+import javax.persistence.SequenceGenerator;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="TB_FUNCIONARIO")
+@SecondaryTable(name="TB_DADO_FUNCIONARIO")
+@SequenceGenerator(name="sqFuncionario",sequenceName="SQ_FUNCIONARIO", allocationSize=1)
+public class Funcionario {
+
+	@Id
+	@Column(name="CD_FUNCIONARIO")
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="sqFuncionario")
+	private int codigo;
+	
+	@Column(name="NM_FUNCIONARIO",nullable=false)
+	private String nome;
+	
+	@Column(name="VL_SALARIO",table="TB_DADO_FUNCIONARIO")
+	private double salario;
+	
+	@Column(name="NR_CONTA", table="TB_DADO_FUNCIONARIO")
+	private String numeroConta;
+
+	public Funcionario() {
+		super();
+	}
+	
+	public Funcionario(int codigo, String nome, double salario, String numeroConta) {
+		super();
+		this.codigo = codigo;
+		this.nome = nome;
+		this.salario = salario;
+		this.numeroConta = numeroConta;
+	}
+
+	public double getSalario() {
+		return salario;
+	}
+
+	public void setSalario(double salario) {
+		this.salario = salario;
+	}
+
+	public String getNumeroConta() {
+		return numeroConta;
+	}
+
+	public void setNumeroConta(String numeroConta) {
+		this.numeroConta = numeroConta;
+	}
+
+	public int getCodigo() {
+		return codigo;
+	}
+
+	public void setCodigo(int codigo) {
+		this.codigo = codigo;
+	}
+
+	public String getNome() {
+		return nome;
+	}
+
+	public void setNome(String nome) {
+		this.nome = nome;
+	}
+}
+
+/*----------------------------------------------------------------*/
+
+package br.com.fiap.entity;
+
+import java.io.Serializable;
+
+public class DependentePK implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	private int funcionario;
+	
+	private int codigo;
+
+	public int getFuncionario() {
+		return funcionario;
+	}
+
+	public void setFuncionario(int funcionario) {
+		this.funcionario = funcionario;
+	}
+
+	public int getCodigo() {
+		return codigo;
+	}
+
+	public void setCodigo(int codigo) {
+		this.codigo = codigo;
+	}
+
+	
+}
+
+/*------------------------------------------------------------------*/
+
+package br.com.fiap.dao;
+
+import br.com.fiap.exception.DBException;
+import br.com.fiap.exception.IdNotFoundException;
+
+public interface GenericDAO<T,K> {
+
+	void cadastrar(T entity);
+	void alterar(T entity);
+	void remover(K codigo) throws IdNotFoundException;
+	T pesquisar(K codigo);
+	void salvar() throws DBException;
+	
+}
+
+/*---*/
+
+package br.com.fiap.dao.impl;
+
+import javax.persistence.EntityManager;
+
+import br.com.fiap.dao.DependenteDAO;
+import br.com.fiap.entity.Dependente;
+import br.com.fiap.entity.DependentePK;
+
+public class DependenteDAOImpl extends GenericDAOImpl<Dependente, DependentePK> implements DependenteDAO{
+
+	public DependenteDAOImpl(EntityManager em) {
+		super(em);
+		// TODO Auto-generated constructor stub
+	}
+
+}
+/*------------------------------------------------------------------------*/
+
+package br.com.fiap.dao.impl;
+
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+
+import br.com.fiap.dao.ClienteDAO;
+import br.com.fiap.entity.Cliente;
+
+public class ClienteDAOImpl extends GenericDAOImpl<Cliente,Integer> implements ClienteDAO{
+
+	public ClienteDAOImpl(EntityManager entityManager) {
+		super(entityManager);
+	}
+
+	@Override
+	public List<Cliente> buscarPorEstado(String estado) {
+		TypedQuery<Cliente> query =
+				em.createQuery("from Cliente c where c.endereco.cidade.uf = :estado",Cliente.class);
+		query.setParameter("estado", estado);
+		return query.getResultList();
+	}
+
+	@Override
+	public List<Cliente> buscarPorReservaQuantDia(int quantidadeDias) {
+		TypedQuery<Cliente> query = 
+				em.createQuery("select r.cliente from Reserva r where r.numeroDias = :dias",Cliente.class);
+		query.setParameter("dias", quantidadeDias);	
+		
+		//Limita o máximo de buscas como resultado
+		query.setMaxResults(50);
+		
+		return query.getResultList();
+	}
+
+	@Override
+	public List<Cliente> buscar(String nome, String cidade) {
+		TypedQuery<Cliente> query = em.createQuery("from Cliente c where c.nome like :nome and c.endereco.cidade.nome like :cidade",Cliente.class);
+		query.setParameter("nome", "%"+nome+"%");
+		query.setParameter("cidade", "%"+cidade+"%");
+		return query.getResultList();
+	}
+
+	@Override
+	public List<Cliente> buscarPorEstados(List<String> estados) {
+		TypedQuery<Cliente> query = em.createQuery("from Cliente c where c.endereco.cidade.uf in (:estados)",Cliente.class);
+		query.setParameter("estados", estados);
+		return query.getResultList();
+	}
+
+	@Override
+	public int buscarQtdClientes() {
+		TypedQuery<Long> query = em.createQuery("select count(c) from Cliente c",Long.class);
+		return query.getSingleResult().intValue();
+	}
+
+	@Override
+	public Cliente buscaPorCpf(String cpf) {
+		return em.createNamedQuery("Cliente.porCpf",Cliente.class).setParameter("cpf", cpf).getSingleResult();
+	}
+
+	@Override
+	public List<Cliente> buscaAniversarianteMes() {
+		return em.createNamedQuery("Cliente.porMesAniversariante",Cliente.class).getResultList();
+	}
+
+	@Override
+	public List<Cliente> buscaPorMesAniversario(int mes) {
+		return em.createNamedQuery("Cliente.porMesAniversario",Cliente.class).setParameter("mes", mes).getResultList();
+	}
+	
+	
+
+}
+
+/*-----------------------------------------------------------------------*/
+
+package br.com.fiap.dao.impl;
+
+import java.util.List;
+
+import javax.persistence.EntityManager;
+
+import br.com.fiap.dao.EnderecoDAO;
+import br.com.fiap.entity.Endereco;
+
+public class EnderecoDAOImpl extends GenericDAOImpl<Endereco,Integer> implements EnderecoDAO{
+
+	public EnderecoDAOImpl(EntityManager entityManager) {
+		super(entityManager);
+	}
+
+	@Override
+	@SuppressWarnings("all")
+	public List<Endereco> buscaPorCep(String cep) {
+		return em.createNativeQuery("select * from endereco where cep = :cep",Endereco.class)
+				.setParameter("cep", cep)
+				.getResultList();
+	}
+
+}
+
+/*-------------------------------------------------------------------------*/
+
+package br.com.fiap.dao;
+
+import br.com.fiap.entity.Dependente;
+import br.com.fiap.entity.DependentePK;
+
+public interface DependenteDAO extends GenericDAO<Dependente, DependentePK>{
+
+}
+
+/*---*/
+
+package br.com.fiap.dao.impl;
+
+import javax.persistence.EntityManager;
+
+import br.com.fiap.dao.DependenteDAO;
+import br.com.fiap.entity.Dependente;
+import br.com.fiap.entity.DependentePK;
+
+public class DependenteDAOImpl extends GenericDAOImpl<Dependente, DependentePK> implements DependenteDAO{
+
+	public DependenteDAOImpl(EntityManager em) {
+		super(em);
+		// TODO Auto-generated constructor stub
+	}
+
+}
+
+/*----------------------------------------------------------------------*/
+
+package br.com.fiap.factory;
+
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+
+public class EntityManagerFactorySingleton {
+
+	//Atributo private e estático que será único
+	private static EntityManagerFactory fabrica;
+	
+	//Construtor privado
+	private EntityManagerFactorySingleton(){}
+	
+	//Método que retorna a única instancia de EntityManagerFactory
+	public static EntityManagerFactory getInstance(){
+		if (fabrica == null){
+			//Inicializa a fabrica
+			fabrica = Persistence
+				.createEntityManagerFactory("KENZO_RM76801");
+		}
+		return fabrica;
+	}
+	
+}
+
+/*-------------------------------------------------------------------------*/
+
+package br.com.fiap.view;
+
+import javax.persistence.EntityManager;
+
+import br.com.fiap.dao.DependenteDAO;
+import br.com.fiap.dao.impl.DependenteDAOImpl;
+import br.com.fiap.entity.Dependente;
+import br.com.fiap.entity.Funcionario;
+import br.com.fiap.exception.DBException;
+import br.com.fiap.factory.EntityManagerFactorySingleton;
+
+public class Teste2 {
+
+	public static void main(String[] args) {
+
+		EntityManager em = EntityManagerFactorySingleton.getInstance().createEntityManager();
+		
+		DependenteDAO dao = new DependenteDAOImpl(em);
+		
+		Funcionario func = new Funcionario(0,"Maneraço",1212,"122-9");
+		
+		Dependente dep = new Dependente(0,func,"LeL");
+		
+		try {
+			dao.cadastrar(dep);
+			dao.salvar();
+		} catch (DBException e) {
+			e.printStackTrace();
+		}
+		
+		em.close();
+		System.exit(0);
+		
+	}
+
+}
+
+/*----------------------------------------------------------------------*/
+
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="2.0" xmlns="http://java.sun.com/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/persistence http://java.sun.com/xml/ns/persistence/persistence_2_0.xsd">
+	<persistence-unit name="CLIENT_ORACLE">	
+		<provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+		<properties>
+			<property name="hibernate.show_sql" value="true"/>
+												<!-- update, validate -->
+			<property name="hibernate.hbm2ddl.auto" value="update"/>
+			<property name="hibernate.dialect" value="org.hibernate.dialect.Oracle10gDialect"/>
+			<property name="javax.persistence.jdbc.driver" value="oracle.jdbc.OracleDriver"/>
+			<property name="hibernate.default_schema" value="RM76167"/>
+			<property name="javax.persistence.jdbc.user" value="RM76167"/>
+			<property name="javax.persistence.jdbc.password" value="240583"/>
+			<property name="javax.persistence.jdbc.url" value="jdbc:oracle:thin:@oracle.fiap.com.br:1521:orcl"/>
+		</properties>	
+	</persistence-unit>	
+</persistence>
+
+/* -----------------------------------------------------------------------*/
+
+
+	@Column(length = 11, nullable = false)
+	private String cpf;
+
+	@Temporal(TemporalType.DATE)
+	@Column(name = "DT_NASCIMENTO")
+	private Calendar dataNascimento;
+
+	@Column(name="DT_SAIDA",nullable=false)
+	@Temporal(TemporalType.TIMESTAMP)
+	private Calendar dataSaida;
+	
+	-----------------------
+	
+			System.out.println(
+				dao.buscaQtdPacotePorData(
+						new GregorianCalendar(2017,Calendar.JANUARY,1),
+						new GregorianCalendar(2017,Calendar.DECEMBER,31)
+						)
+				);
+				
+		em.close();
+		System.exit(0);
+		
+
+ /*-----*/
+ package br.com.fiap.dao.impl;
+
+import java.lang.reflect.ParameterizedType;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+
+import br.com.fiap.dao.GenericDAO;
+import br.com.fiap.exception.DBException;
+import br.com.fiap.exception.IdNotFoundException;
+
+public class GenericDAOImpl<T,K> implements GenericDAO<T, K>{
+
+	protected EntityManager em;
+	
+	//.class da entidade (usado na busca)
+	protected Class<T> classe;
+	
+	//Construtor
+	@SuppressWarnings("unchecked")
+	public GenericDAOImpl(EntityManager em) {
+		this.em = em;
+		classe = (Class<T>) ((ParameterizedType)getClass()
+			.getGenericSuperclass()).getActualTypeArguments()[0];
+	}
+	
+	@Override
+	public void cadastrar(T entity) {
+		em.persist(entity);
+	}
+
+	@Override
+	public void alterar(T entity) {
+		em.merge(entity);
+	}
+
+	@Override
+	public void remover(K codigo) throws IdNotFoundException {
+		T entidade = pesquisar(codigo);
+		if (entidade == null){
+			throw new IdNotFoundException("Entidade não encontrada");
+		}
+		em.remove(entidade);
+	}
+
+	@Override
+	public T pesquisar(K codigo) {
+		return em.find(classe, codigo);
+	}
+	
+	public void salvar() throws DBException{
+		try {
+			em.getTransaction().begin();
+			em.getTransaction().commit();
+		}catch(Exception e){
+			if (em.getTransaction().isActive())
+				em.getTransaction().rollback();
+			throw new DBException("Erro no commit", e);
+		}
+	}
+
+	@Override
+	public List<T> listar() {
+		TypedQuery<T> query = em.createQuery("from ".concat(classe.getName()),classe);
+		return query.getResultList();
+	}
+
+}
+
+
+/*---*/
+
+package br.com.fiap.dao.impl;
+
+import java.util.Calendar;
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+
+import br.com.fiap.dao.PacoteDAO;
+import br.com.fiap.entity.Pacote;
+import br.com.fiap.entity.Transporte;
+
+public class PacoteDAOImpl extends GenericDAOImpl<Pacote,Integer> implements PacoteDAO{
+
+	public PacoteDAOImpl(EntityManager entityManager) {
+		super(entityManager);
+	}
+
+	@Override
+	public List<Pacote> buscarPorQuantidadeDiasMinimo(int dias) {
+		TypedQuery<Pacote> query = //Nome da classe e do atributo
+				em.createQuery("from Pacote p where p.qtdDias > :churros",Pacote.class);
+		query.setParameter("churros", dias);
+		return query.getResultList();
+	}
+
+	@Override
+	public List<Pacote> buscaPorTransporte(Transporte transporte) {
+		TypedQuery<Pacote> query = 
+				em.createQuery("from Pacote p where p.transporte = :trans",Pacote.class);
+		query.setParameter("trans", transporte);
+		return query.getResultList();
+	}
+
+	@Override
+	public List<Pacote> buscarPorDatas(Calendar inicio, Calendar fim) {
+		TypedQuery<Pacote> query = em.createQuery("from Pacote p where p.dataSaida between :inicio and :fim",Pacote.class);
+		query.setParameter("inicio", inicio);
+		query.setParameter("fim", fim);
+		return query.getResultList();
+	}
+
+	@Override
+	public double mediaPrecoPacote() {
+		TypedQuery<Double> query = em.createQuery("select avg(p.preco) from Pacote p",Double.class);
+		return query.getSingleResult().doubleValue();
+	}
+
+	@Override
+	public int buscaQtdPacotePorData(Calendar inicio, Calendar fim) {
+		TypedQuery<Long> query = em.createQuery("select count(p) from Pacote p where p.dataSaida between :inicio and :fim",Long.class);
+		query.setParameter("inicio", inicio);
+		query.setParameter("fim", fim);
+		return query.getSingleResult().intValue();
+	}
+
+	@Override
+	public Pacote buscaPacoteComMaiorPreco() {
+		TypedQuery<Pacote> query = em.createQuery("from Pacote p where p.preco = (select max(p.preco) from Pacote p)",Pacote.class);
+		return query.getSingleResult();
+	}
+
+}
