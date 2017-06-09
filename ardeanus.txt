@@ -1,0 +1,141 @@
+//Lendo o JSON da porta Serial e mandando a luminosidade
+
+#include <ArduinoJson.h>
+const int LED = 3;
+const int LUZ = A1;
+const int TAMANHO = 200;
+void setup() {
+ Serial.begin(9600);
+ Serial.setTimeout(10); //1000ms é muito tempo
+ pinMode(LED,OUTPUT);
+}
+void loop() {
+ if (Serial.available() > 0) {
+ //Lê o texto disponível na porta serial:
+ char texto[TAMANHO];
+ Serial.readBytesUntil('\n', texto, TAMANHO);
+ //Grava o texto recebido como JSON
+ StaticJsonBuffer<TAMANHO> jsonBuffer;
+ JsonObject& json = jsonBuffer.parseObject(texto);
+ if(json.success() && json.containsKey("led")) {
+ analogWrite(LED, json["led"]);
+ }
+ }
+ StaticJsonBuffer<TAMANHO> jsonBuffer;
+ JsonObject& json = jsonBuffer.createObject();
+ json["luz"] = analogRead(LUZ);
+ json.printTo(Serial); Serial.println();
+ delay(1000);
+}
+
+/*
+-------------------------------------------------
+Exemplo: convertendo timestamp em data formatada:
+function(msg) {
+ msg.payload = new Date(msg.payload).toString();
+ return msg;
+}
+---------------------------------------------------
+*/
+
+//LENDO O SENSOR DHT-11 
+
+#include "DHT.h"
+#define DHTPIN A1 // pino que estamos conectado
+#define DHTTYPE DHT11 // DHT 11
+DHT dht(DHTPIN, DHTTYPE); //Instanciação do objeto do sensor
+void setup() {
+ Serial.begin(9600);
+dht.begin();
+}
+void loop() {
+ // A leitura da temperatura e umidade pode levar 250ms!
+ float h = dht.readHumidity();//Valor da umidade
+ float t = dht.readTemperature(); //Valor da temperatura
+ if (isnan(t) || isnan(h)) {
+ Serial.println("Erro ao ler do DHT");
+ } else {
+ Serial.print("Umidade: ");
+ Serial.print(h); Serial.print(" %\t");
+ Serial.print("Temperatura: ");
+ Serial.print(t); Serial.println(" ºC");
+ }
+}
+
+/*--------------------------------------------------------------*/
+
+//EXEMPLO DE INTERRUPÇÃO - ARDUINO
+
+int led = 13; //Porta do LED
+int interruptPort = 2; //porta da interrupção
+int interruptNumber = 0; //ID da interrupção
+//Variáveis modificadas por interrupções devem ser volatile
+volatile int state = LOW;
+void setup() {
+ pinMode(led, OUTPUT);
+pinMode(interruptPort, INPUT_PULLUP);
+ attachInterrupt(interruptNumber, toggle, CHANGE);
+}
+void loop() {
+ // Qualquer processamento mais longo...
+}
+void toggle() {
+ state = !state;
+digitalWrite(led,state);
+}
+
+/*-----------------------------------------------------------------*/
+
+//ARDUINO - LENDO A PORTA SERIAL
+
+const int LED = 3;
+char nextChar = 0, lendo = 0;
+String valor;
+void setup() {
+ Serial.begin(9600);
+pinMode(LED,OUTPUT);
+}
+void loop() {
+if (Serial.available() > 0) {
+ // lê o byte disponível na porta serial:
+ nextChar = Serial.read();
+ if(nextChar == 'B') {
+ lendo = 1; //lendo <- true
+ valor = "";
+ } else if(nextChar == 'E') {
+ lendo = 0; //lendo <- false
+ analogWrite(LED,valor.toInt());
+ Serial.println(String("Potencia do LED: ") + valor);
+ } else if(lendo && nextChar >= '0' && nextChar <= '9') {
+ valor += nextChar;
+ }
+}
+}
+
+/*--------------------------------------------------------------------*/
+
+//Arduino – Lendo a porta Serial (outro modo)
+
+const int LED = 3;
+char nextChar = 0;
+void setup() {
+ Serial.begin(9600);
+ pinMode(LED,OUTPUT);
+}
+void loop() {
+ if (Serial.available() > 0) {
+ // lê o byte disponível na porta serial:
+ nextChar = Serial.read();
+ if(nextChar == 'B') {
+ //Lê o próximo inteiro vindo da serial
+ int valor = Serial.parseInt();
+ //Atenção: em caso de erro o valor lido será 0
+ analogWrite(LED,valor);
+ Serial.println(String("Potencia do LED: ") + valor);
+ }
+ }
+}
+
+/*------------------------------------------------------------------------*/
+
+
